@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 import { getPhaseSegments, getSunTimes, sampleElevations } from '../lib/solar/index.js';
-import { buildSunCards } from '../lib/summary/cards.js';
-import { describeTomorrow } from '../lib/summary/compare.js';
+import { buildDaySummary } from '../lib/summary/cards.js';
+import { describeShortChanges } from '../lib/summary/compare.js';
 import { addCivilDays, civilDayBounds, civilNoon, parseCivilDate, zonedTimeToUtc } from '../lib/time/zoned.js';
 
 /**
  * Everything about one calendar day at one place. Recomputed only when either changes.
  * @param {object | null} location
  * @param {string | null} civilDate 'YYYY-MM-DD' in the location's time zone
- * @param {boolean} isToday words comparisons as "tomorrow" rather than "the next day"
+ * @param {boolean} isToday words comparisons as "tomorrow" rather than "next day"
  */
 export function useSunDay(location, civilDate, isToday) {
   return useMemo(() => {
@@ -24,8 +24,8 @@ export function useSunDay(location, civilDate, isToday) {
       timeZone,
       bounds,
       times,
-      cards: buildSunCards(times, bounds),
-      comparisons: describeTomorrow(times, nextDay, timeZone, isToday ? 'tomorrow' : 'nextDay'),
+      summary: buildDaySummary(times, bounds),
+      changes: describeShortChanges(times, nextDay, timeZone, isToday ? 'tomorrow' : 'nextDay'),
       segments: getPhaseSegments(bounds.start, bounds.end, lat, lng),
       samples: sampleElevations(bounds.start, bounds.end, lat, lng, 10),
       // Clock positions for axis labels; real instants, so DST days stay accurate.

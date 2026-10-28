@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { getSunTimes } from '../solar/index.js';
 import { addCivilDays, civilDayBounds, civilNoon } from '../time/zoned.js';
-import { CARD, buildSunCards, describeBand, findHighlights } from './cards.js';
-import { describeDayLengthChange, describeEventShift, describeTomorrow } from './compare.js';
+import { STAT, WINDOW, buildDaySummary, describeBand, findHighlights, summaryItems } from './cards.js';
+import { describeShortChanges } from './compare.js';
 import { compassPoint, describeElevation, describeNextEvent } from './describe.js';
 
 const place = (lat, lng, timeZone) => ({ lat, lng, timeZone });
@@ -15,51 +15,75 @@ const dayFor = ({ lat, lng, timeZone }, civil) => ({
   bounds: civilDayBounds(civil, timeZone),
 });
 
-const card = (cards, id) => cards.find((c) => c.id === id);
+const summaryFor = (where, civil) => {
+  const { times, bounds } = dayFor(where, civil);
+  return { times, summary: buildDaySummary(times, bounds) };
+};
 
-describe('buildSunCards', () => {
-  it('shows times and ranges on an ordinary day', () => {
-    const { times, bounds } = dayFor(LONDON, '2026-10-27');
-    const cards = buildSunCards(times, bounds);
-    expect(cards.map((c) => c.id)).toEqual(Object.values(CARD));
-    expect(card(cards, CARD.SUNRISE).value).toEqual({ type: 'time', at: times.sunrise });
-    expect(card(cards, CARD.GOLDEN_MORNING).value.view.kind).toBe('range');
-    expect(card(cards, CARD.BLUE_HOURS).value.rows.map((r) => r.label)).toEqual(['Morning', 'Evening']);
+const stat = (summary, id) => summary.stats.find((s) => s.id === id);
+/** Group id → [row label, view kind] pairs, for compact assertions. */
+const shape = (summary) =>
+  Object.fromEntries(summary.windowGroups.map((g) => [g.id, g.rows.map((r) => [r.label, r.view.kind])]));
+
+describe('buildDaySummary', () => {
+  it('shows the four key times and chronological windows on an ordinary day', () => {
+    const { times, summary } = summaryFor(LONDON, '2026-10-27');
+    expect(summary.stats.map((s) => s.id)).toEqual(Object.values(STAT));
+    expect(stat(summary, STAT.SUNRISE).value).toEqual({ type: 'time', at: times.sunrise });
+    expect(shape(summary)).toEqual({
+      morning: [
+        ['Blue hour', 'range'],
+        ['Golden hour', 'range'],
+      ],
+      evening: [
+        ['Golden hour', 'range'],
+        ['Blue hour', 'range'],
+      ],
+    });
+    const ids = summary.windowGroups.flatMap((g) => g.rows.map((r) => r.id));
+    expect(ids).toEqual([WINDOW.BLUE_MORNING, WINDOW.GOLDEN_MORNING, WINDOW.GOLDEN_EVENING, WINDOW.BLUE_EVENING]);
   });
 
-  it('shows calm messages during polar night', () => {
-    const { times, bounds } = dayFor(TROMSO, '2026-12-21');
-    const cards = buildSunCards(times, bounds);
-    expect(card(cards, CARD.SUNRISE).value).toEqual({ type: 'message', text: 'The sun doesn’t rise today' });
-    expect(card(cards, CARD.SUNSET).value.text).toBe('The sun stays below the horizon');
-    // The sun peaks near −3°: golden light around midday, but no sunrise.
-    expect(card(cards, CARD.GOLDEN_MORNING).value.view).toMatchObject({ kind: 'from', note: 'Lasts through midday' });
-    expect(card(cards, CARD.GOLDEN_EVENING).value.view).toMatchObject({ kind: 'until', note: 'Continues from midday' });
-    expect(card(cards, CARD.DAY_LENGTH).note).toBe('Polar night');
+  it('joins midday golden light into one window during polar night', () => {
+    // Tromsø in December: the sun peaks near −3°, so no sunrise but golden light around noon.
+    const { times, summary } = summaryFor(TROMSO, '2026-12-21');
+    expect(stat(summary, STAT.SUNRISE).value).toEqual({ type: 'message', text: 'Doesn’t rise today' });
+    expect(stat(summary, STAT.SUNSET).value.text).toBe('Stays below the horizon');
+    expect(stat(summary, STAT.DAY_LENGTH).note).toBe('Polar night');
+    expect(shape(summary)).toEqual({
+      morning: [['Blue hour', 'range']],
+      midday: [['Golden hour', 'range']],
+      evening: [['Blue hour', 'range']],
+    });
+    const midday = summary.windowGroups.find((g) => g.id === 'midday').rows[0].view;
+    expect(midday.start).toEqual(times.goldenHourMorningStart);
+    expect(midday.end).toEqual(times.goldenHourEveningEnd);
   });
 
   it('shows calm messages during the midnight sun', () => {
-    const { times, bounds } = dayFor(TROMSO, '2026-06-21');
-    const cards = buildSunCards(times, bounds);
-    expect(card(cards, CARD.SUNSET).value.text).toBe('The sun doesn’t set today');
-    expect(card(cards, CARD.BLUE_HOURS).value.rows[0].view.note).toBe('The sky stays too bright for blue hour');
+    const { summary } = summaryFor(TROMSO, '2026-06-21');
+    expect(stat(summary, STAT.SUNSET).value.text).toBe('Doesn’t set today');
+    const allDay = summary.windowGroups.find((g) => g.id === 'allDay').rows;
+    expect(allDay.find((r) => r.label === 'Blue hour').view.note).toBe('The sky stays too bright for blue hour');
   });
 
-  it('has no twilight at all in deep polar night', () => {
+  it('has a single row per band when there is no twilight at all', () => {
     // Svalbard in December: the sun stays below −11°.
-    const { times, bounds } = dayFor(LONGYEARBYEN, '2026-12-21');
-    const cards = buildSunCards(times, bounds);
-    expect(card(cards, CARD.SUNRISE).value.type).toBe('message');
-    expect(card(cards, CARD.GOLDEN_EVENING).value.view.note).toBe('The sun stays too low for golden light');
-    expect(card(cards, CARD.BLUE_HOURS).value.rows[0].view.note).toBe('The sky stays dark all day');
+    const { summary } = summaryFor(LONGYEARBYEN, '2026-12-21');
+    expect(shape(summary)).toEqual({
+      allDay: [
+        ['Golden hour', 'none'],
+        ['Blue hour', 'none'],
+      ],
+    });
+    expect(summary.windowGroups[0].rows[1].view.note).toBe('The sky stays dark all day');
   });
 
   it('merges an all-day blue hour into one row', () => {
     // At the North Pole in early March the sun circles about 5° below the horizon.
-    const { times, bounds } = dayFor(place(90, 0, 'UTC'), '2026-03-07');
-    const rows = card(buildSunCards(times, bounds), CARD.BLUE_HOURS).value.rows;
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ label: 'All day', view: { kind: 'allDay' } });
+    const { summary } = summaryFor(place(90, 0, 'UTC'), '2026-03-07');
+    const allDay = summary.windowGroups.find((g) => g.id === 'allDay').rows;
+    expect(allDay.find((r) => r.label === 'Blue hour').view.kind).toBe('allDay');
   });
 });
 
@@ -85,51 +109,53 @@ describe('describeBand', () => {
 
 describe('findHighlights', () => {
   it('marks the next event and anything in progress', () => {
-    const { times, bounds } = dayFor(LONDON, '2026-10-27');
-    const cards = buildSunCards(times, bounds);
+    const { times, summary } = summaryFor(LONDON, '2026-10-27');
+    const items = summaryItems(summary);
 
-    const atNoon = findHighlights(cards, new Date(times.solarNoon.getTime() + 60000));
-    expect(atNoon.nextId).toBe(CARD.GOLDEN_EVENING);
+    const atNoon = findHighlights(items, new Date(times.solarNoon.getTime() + 60000));
+    expect(atNoon.nextId).toBe(WINDOW.GOLDEN_EVENING);
     expect(atNoon.activeIds.size).toBe(0);
 
-    const inGolden = findHighlights(cards, new Date(times.sunset.getTime() - 5 * 60000));
-    expect(inGolden.nextId).toBe(CARD.SUNSET);
-    expect(inGolden.activeIds.has(CARD.GOLDEN_EVENING)).toBe(true);
+    const inGolden = findHighlights(items, new Date(times.sunset.getTime() - 5 * 60000));
+    expect(inGolden.nextId).toBe(STAT.SUNSET);
+    expect(inGolden.activeIds.has(WINDOW.GOLDEN_EVENING)).toBe(true);
 
-    expect(findHighlights(cards, null).nextId).toBeNull();
+    expect(findHighlights(items, null).nextId).toBeNull();
   });
 });
 
-describe('comparisons', () => {
+describe('describeShortChanges', () => {
   it('describes clock shifts and day length changes', () => {
-    const today = { sunrise: new Date('2026-10-27T07:00:00Z'), sunset: null };
-    const tomorrow = { sunrise: new Date('2026-10-28T07:02:00Z'), sunset: null };
-    expect(describeEventShift('sunrise', today, tomorrow, 'UTC')).toBe('Tomorrow’s sunrise is 2 min later');
-    expect(describeDayLengthChange(36000000, 36000000 - 133000)).toBe('Tomorrow is 2 min 13 s shorter');
-    expect(describeDayLengthChange(36000000, 36000000 + 40000)).toBe('Tomorrow is 40 s longer');
-    expect(describeEventShift('sunrise', today, tomorrow, 'UTC', 'nextDay')).toBe('The next day’s sunrise is 2 min later');
+    const today = { sunrise: new Date('2026-10-27T07:00:00Z'), sunset: new Date('2026-10-27T17:00:00Z'), dayLength: 36000000 };
+    const next = { sunrise: new Date('2026-10-28T07:02:00Z'), sunset: new Date('2026-10-28T17:00:10Z'), dayLength: 36000000 - 110000 };
+    expect(describeShortChanges(today, next, 'UTC')).toEqual({
+      sunrise: '2 min later tomorrow',
+      sunset: 'Same time tomorrow',
+      dayLength: '1 min 50 s shorter tomorrow',
+    });
+    expect(describeShortChanges(today, next, 'UTC', 'nextDay').sunrise).toBe('2 min later next day');
   });
 
   it('reports the real DST jump on change days', () => {
     // Clocks go back on 2026-10-25 in London, so sunrise moves an hour earlier by the clock.
     const a = dayFor(LONDON, '2026-10-24').times;
     const b = dayFor(LONDON, '2026-10-25').times;
-    expect(describeEventShift('sunrise', a, b, LONDON.timeZone)).toMatch(/^Tomorrow’s sunrise is 5\d min earlier$/);
+    expect(describeShortChanges(a, b, LONDON.timeZone).sunrise).toMatch(/^5\d min earlier tomorrow$/);
   });
 
   it('handles the return of the sun after polar night', () => {
     let civil = '2027-01-01';
-    let lines = [];
+    let changes = null;
     for (let i = 0; i < 40; i += 1) {
       const a = dayFor(TROMSO, civil).times;
       const b = dayFor(TROMSO, addCivilDays(civil, 1)).times;
       if (a.alwaysDown && !b.alwaysDown) {
-        lines = describeTomorrow(a, b, TROMSO.timeZone);
+        changes = describeShortChanges(a, b, TROMSO.timeZone);
         break;
       }
       civil = addCivilDays(civil, 1);
     }
-    expect(lines).toContain('The sun rises again tomorrow');
+    expect(changes).toMatchObject({ sunrise: 'Rises again tomorrow', sunset: 'Sets again tomorrow', dayLength: null });
   });
 });
 
