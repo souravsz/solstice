@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
 import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import SearchRounded from '@mui/icons-material/SearchRounded';
@@ -79,33 +78,13 @@ export function CitySearch({ onSelect, autoFocus = false }) {
           />
         )}
       />
+      {/* Only speaks up when worldwide search fails. The data credit lives in the app footer. */}
       <Box role="status" aria-live="polite">
-        <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1 }}>
-          {error ? (
-            `${error} Showing built-in cities only.`
-          ) : (
-            <>
-              Worldwide search by{' '}
-              <Link href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer" color="inherit">
-                Open-Meteo
-              </Link>{' '}
-              with{' '}
-              <Link href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" color="inherit">
-                GeoNames
-              </Link>{' '}
-              data (
-              <Link
-                href="https://creativecommons.org/licenses/by/4.0/"
-                target="_blank"
-                rel="noopener noreferrer"
-                color="inherit"
-              >
-                CC BY 4.0
-              </Link>
-              ).
-            </>
-          )}
-        </Typography>
+        {error ? (
+          <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 1 }}>
+            {error} Showing built-in cities only.
+          </Typography>
+        ) : null}
       </Box>
     </Box>
   );

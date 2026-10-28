@@ -60,8 +60,8 @@ export function LocationPicker({
 
       <DialogContent>
         <Typography id="location-picker-description" variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Sun times are calculated on this device and your location is saved only here. Searching sends just the
-          text you type to Open-Meteo; built-in cities work offline.
+          Sun times are calculated on this device and your location is saved only here. Worldwide search sends just
+          the text you type; built-in cities work offline.
         </Typography>
 
         <CitySearch
