@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import { AppFooter } from './components/AppFooter.jsx';
 import { AppHeader } from './components/AppHeader.jsx';
-import { DateNav } from './components/DateNav.jsx';
-import { DaySummary } from './components/DaySummary.jsx';
 import { EmptyState } from './components/EmptyState.jsx';
 import { SkyPanel } from './components/SkyPanel.jsx';
 import { SunArc } from './components/SunArc.jsx';
 import { LocationPicker } from './components/location/LocationPicker.jsx';
+import { DateHeader } from './components/sun-times/DateHeader.jsx';
+import { SunTimesCard } from './components/sun-times/SunTimesCard.jsx';
 import { useLocation } from './hooks/useLocation.js';
 import { useNow } from './hooks/useNow.js';
 import { useSunDay } from './hooks/useSunDay.js';
@@ -65,7 +65,7 @@ export default function App() {
               <SkyPanel now={now} sun={sun} location={location} />
 
               <Box sx={{ mt: { xs: 5, md: 7 }, mb: { xs: 2.5, md: 3 } }}>
-                <DateNav
+                <DateHeader
                   civilDate={civilDate}
                   today={today}
                   timeZone={location.timeZone}
@@ -74,7 +74,7 @@ export default function App() {
               </Box>
 
               <Box sx={{ display: 'grid', gap: { xs: 2, md: 3 } }}>
-                <DaySummary day={day} now={now} isToday={isToday} statusFor={statusFor} />
+                <SunTimesCard day={day} now={now} isToday={isToday} statusFor={statusFor} />
                 <SunArc day={day} location={location} now={now} isToday={isToday} />
               </Box>
             </>

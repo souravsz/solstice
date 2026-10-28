@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Sunrise, sunset, golden hour and blue hour for your location, calculated on your device. Works offline." />
-    <meta name="theme-color" content="#F6F4F0" />
+    <meta name="theme-color" content="#F7F6F3" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
@@ -17,7 +17,7 @@
           var pref = localStorage.getItem('solstice.colorMode');
           var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           var root = document.documentElement;
-          root.style.backgroundColor = dark ? '#11100E' : '#F6F4F0';
+          root.style.backgroundColor = dark ? '#121211' : '#F7F6F3';
           root.style.colorScheme = dark ? 'dark' : 'light';
         } catch (e) {
           /* storage unavailable: fall back to defaults */

@@ -101,7 +101,7 @@ export function SunArc({ day, location, now, isToday }) {
         <Box
           sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'space-between', gap: 1, mb: 1 }}
         >
-          <Typography id={`${uid}-heading`} variant="h4" component="h3">
+          <Typography id={`${uid}-heading`} variant="cardTitle">
             Sun path
           </Typography>
           <Box component="ul" aria-label="Legend" sx={{ display: 'flex', gap: 2, listStyle: 'none', m: 0, p: 0 }}>

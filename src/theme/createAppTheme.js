@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material/styles';
 import { alpha } from '../lib/color/color.js';
-import { focusRing, fonts, motion, phaseAccents, phaseFills, radius, spacingUnit, surfaces } from './tokens.js';
+import { focusRing, fonts, motion, phaseAccents, phaseFills, radius, shadows, spacingUnit, sun, surfaces } from './tokens.js';
 
 const tabularNumerals = {
   fontVariantNumeric: 'tabular-nums lining-nums',
@@ -18,7 +18,8 @@ export function createAppTheme(mode) {
 
   const theme = createTheme({
     spacing: spacingUnit,
-    shape: { borderRadius: radius.md },
+    // sx `borderRadius: 1` = 10px (controls). Cards use radius.card (16px) via their override.
+    shape: { borderRadius: radius.control },
     palette: {
       mode,
       primary: { main: s.ink, contrastText: s.onInk },
@@ -30,6 +31,8 @@ export function createAppTheme(mode) {
       divider: s.border,
       phase: accents,
       phaseFill: phaseFills[mode],
+      /** Sun phase fills plus readable text shades: night, blue, golden, day, blueText, goldenText. */
+      sun: sun[mode],
       surface: s,
       focus: ring,
     },
@@ -73,7 +76,7 @@ export function createAppTheme(mode) {
       button: { fontWeight: 600, fontSize: '0.9375rem', textTransform: 'none', letterSpacing: 0 },
       caption: { fontSize: '0.8125rem', lineHeight: 1.45, letterSpacing: '0.005em' },
       overline: {
-        fontSize: '0.75rem',
+        fontSize: '0.6875rem',
         fontWeight: 600,
         lineHeight: 1.4,
         letterSpacing: '0.08em',
@@ -88,23 +91,64 @@ export function createAppTheme(mode) {
         letterSpacing: '-0.03em',
         ...tabularNumerals,
       },
-      /** Times on cards. */
-      timeCard: {
-        fontFamily: fonts.serif,
-        fontWeight: 450,
-        fontSize: 'clamp(1.75rem, 1.55rem + 0.6vw, 2.125rem)',
-        lineHeight: 1.1,
-        letterSpacing: '-0.015em',
-        ...tabularNumerals,
+      /** Page date title ("Thursday, 29 October"). */
+      dateTitle: {
+        fontFamily: fonts.sans,
+        fontWeight: 600,
+        fontSize: 'clamp(1.625rem, 1.4rem + 0.9vw, 2rem)',
+        lineHeight: 1.15,
+        letterSpacing: '-0.02em',
       },
-      /** Small inline times (ranges, labels). */
-      timeInline: {
+      /** Card headings ("Sun times", "Sun path"). */
+      cardTitle: {
+        fontFamily: fonts.sans,
+        fontWeight: 600,
+        fontSize: '1.0625rem',
+        lineHeight: 1.35,
+        letterSpacing: '-0.01em',
+      },
+      /** Primary stat numbers (sunrise, sunset). */
+      statPrimary: {
         fontFamily: fonts.sans,
         fontWeight: 500,
-        fontSize: '0.9375rem',
+        fontSize: 'clamp(2.125rem, 1.95rem + 0.6vw, 2.5rem)',
+        lineHeight: 1.1,
+        letterSpacing: '-0.02em',
+        ...tabularNumerals,
+      },
+      /** Secondary stat numbers (solar noon, day length). */
+      statSecondary: {
+        fontFamily: fonts.sans,
+        fontWeight: 500,
+        fontSize: 'clamp(1.5rem, 1.4rem + 0.35vw, 1.75rem)',
+        lineHeight: 1.15,
+        letterSpacing: '-0.02em',
+        ...tabularNumerals,
+      },
+      /** A sentence in place of a stat number ("Doesn't rise today"). */
+      statMessage: {
+        fontFamily: fonts.sans,
+        fontWeight: 500,
+        fontSize: '1.125rem',
+        lineHeight: 1.35,
+        letterSpacing: '-0.01em',
+      },
+      /** Stat labels ("Sunrise"). */
+      statLabel: { fontFamily: fonts.sans, fontWeight: 500, fontSize: '0.8125rem', lineHeight: 1.4 },
+      /** Helper text under a stat ("Same time tomorrow"). */
+      statHelper: { fontFamily: fonts.sans, fontWeight: 400, fontSize: '0.8125rem', lineHeight: 1.45 },
+      /** Golden / blue hour row names. */
+      rowLabel: { fontFamily: fonts.sans, fontWeight: 500, fontSize: '0.875rem', lineHeight: 1.45 },
+      /** Time ranges in rows. */
+      timeRange: {
+        fontFamily: fonts.sans,
+        fontWeight: 500,
+        fontSize: '0.875rem',
         lineHeight: 1.45,
         ...tabularNumerals,
       },
+      /** Axis ticks under the timeline and the sun path. */
+      tick: { fontFamily: fonts.sans, fontWeight: 500, fontSize: '0.75rem', lineHeight: 1.3, ...tabularNumerals },
     },
     transitions: {
       duration: {
@@ -154,7 +198,19 @@ export function createAppTheme(mode) {
     },
     MuiTypography: {
       defaultProps: {
-        variantMapping: { time: 'p', timeCard: 'p', timeInline: 'span' },
+        variantMapping: {
+          time: 'p',
+          dateTitle: 'h2',
+          cardTitle: 'h3',
+          statPrimary: 'p',
+          statSecondary: 'p',
+          statMessage: 'p',
+          statLabel: 'span',
+          statHelper: 'p',
+          rowLabel: 'span',
+          timeRange: 'span',
+          tick: 'span',
+        },
       },
     },
     MuiPaper: {
@@ -176,7 +232,7 @@ export function createAppTheme(mode) {
           borderRadius: radius.card,
           border: `1px solid ${s.border}`,
           backgroundColor: s.surface,
-          boxShadow: 'none',
+          boxShadow: shadows[mode].card,
           transition: theme.transitions.create(['border-color', 'background-color', 'box-shadow'], {
             duration: motion.base,
           }),
@@ -186,11 +242,12 @@ export function createAppTheme(mode) {
     MuiCardContent: {
       styleOverrides: {
         root: {
+          // 20px on phones, 32px from tablets up.
           padding: theme.spacing(2.5),
           '&:last-child': { paddingBottom: theme.spacing(2.5) },
-          [theme.breakpoints.up('sm')]: {
-            padding: theme.spacing(3),
-            '&:last-child': { paddingBottom: theme.spacing(3) },
+          [theme.breakpoints.up('md')]: {
+            padding: theme.spacing(4),
+            '&:last-child': { paddingBottom: theme.spacing(4) },
           },
         },
       },
@@ -203,7 +260,7 @@ export function createAppTheme(mode) {
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: radius.md,
+          borderRadius: radius.control,
           textTransform: 'none',
           fontWeight: 600,
           paddingInline: theme.spacing(2),
@@ -222,7 +279,7 @@ export function createAppTheme(mode) {
           '&:hover': { backgroundColor: alpha(s.textPrimary, 0.05) },
         },
         containedPrimary: {
-          '&:hover': { backgroundColor: mode === 'light' ? '#36332E' : '#FFFFFF' },
+          '&:hover': { backgroundColor: alpha(s.ink, 0.86) },
         },
         sizeSmall: { minHeight: 32, paddingInline: theme.spacing(1.5), fontSize: '0.875rem' },
       },
@@ -230,7 +287,7 @@ export function createAppTheme(mode) {
     MuiIconButton: {
       styleOverrides: {
         root: {
-          borderRadius: radius.md,
+          borderRadius: radius.control,
           color: s.textPrimary,
           transition: theme.transitions.create(['background-color', 'border-color'], { duration: motion.fast }),
           '&:hover': { backgroundColor: alpha(s.textPrimary, 0.06) },
@@ -241,9 +298,9 @@ export function createAppTheme(mode) {
       defaultProps: { variant: 'outlined' },
       styleOverrides: {
         root: {
-          borderRadius: radius.pill,
+          borderRadius: radius.control,
           fontWeight: 500,
-          borderColor: s.border,
+          borderColor: s.borderStrong,
           color: s.textPrimary,
           transition: theme.transitions.create(['background-color', 'border-color'], { duration: motion.fast }),
         },
