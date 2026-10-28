@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="Sunrise, sunset, golden hour and blue hour for your location, calculated on your device. Works offline." />
+    <meta name="theme-color" content="#F6F4F0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <title>Solstice · Sunrise, sunset and golden hour</title>
+    <script>
+      // Paint the right background before React loads to avoid a light/dark flash.
+      // Keep these colours in sync with src/theme/tokens.js.
+      (function () {
+        try {
+          var pref = localStorage.getItem('solstice.colorMode');
+          var dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          root.style.backgroundColor = dark ? '#11100E' : '#F6F4F0';
+          root.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {
+          /* storage unavailable: fall back to defaults */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>Solstice needs JavaScript to calculate the sun's position.</noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
