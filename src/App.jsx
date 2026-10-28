@@ -18,7 +18,7 @@ import { civilDateOf } from './lib/time/zoned.js';
 const CONTENT_WIDTH = 1100;
 
 export default function App() {
-  const { location, chooseLocation, chooseCoordinates, locate, geoStatus, clearGeoStatus } = useLocation();
+  const { location, chooseLocation, locate, geoStatus, clearGeoStatus } = useLocation();
   // First launch: open the picker straight away.
   const [pickerOpen, setPickerOpen] = useState(() => location === null);
   // null means "today", so the view rolls over at midnight on its own.
@@ -93,7 +93,6 @@ export default function App() {
         location={location}
         geoStatus={geoStatus}
         onChooseLocation={chooseLocation}
-        onChooseCoordinates={chooseCoordinates}
         onLocate={locate}
       />
     </Box>

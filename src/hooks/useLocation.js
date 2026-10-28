@@ -1,17 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { CITIES } from '../data/cities.js';
 import { getCurrentPosition } from '../lib/location/geolocation.js';
-import {
-  isValidLocation,
-  locationFromCity,
-  locationFromCoordinates,
-  locationFromGeolocation,
-} from '../lib/location/locations.js';
+import { isValidLocation, locationFromGeolocation } from '../lib/location/locations.js';
 import { loadLocation, saveLocation } from '../lib/location/storage.js';
 
 /**
  * The chosen location, persisted in localStorage.
- * Supports picking a city, typing coordinates, or asking the browser for the position.
+ * Supports picking a searched place, or asking the browser for the position.
  */
 export function useLocation() {
   const [location, setLocationState] = useState(loadLocation);
@@ -26,15 +21,8 @@ export function useLocation() {
     return next;
   }, []);
 
-  const chooseCity = useCallback((city) => commit(locationFromCity(city)), [commit]);
-
   /** A location already built by the search (built-in or worldwide). */
   const chooseLocation = useCallback((next) => (isValidLocation(next) ? commit(next) : null), [commit]);
-
-  const chooseCoordinates = useCallback(
-    (lat, lng) => commit(locationFromCoordinates(lat, lng, CITIES)),
-    [commit],
-  );
 
   /** @returns {Promise<object | null>} the new location, or null if it failed or was superseded */
   const locate = useCallback(async () => {
@@ -55,5 +43,5 @@ export function useLocation() {
 
   const clearGeoStatus = useCallback(() => setGeoStatus({ state: 'idle', message: null }), []);
 
-  return { location, chooseCity, chooseLocation, chooseCoordinates, locate, geoStatus, clearGeoStatus };
+  return { location, chooseLocation, locate, geoStatus, clearGeoStatus };
 }

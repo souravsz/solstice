@@ -13,8 +13,8 @@ export class GeolocationError extends Error {
 }
 
 const MESSAGES = {
-  unsupported: 'This browser can’t share your location. Pick a city or enter coordinates instead.',
-  insecure: 'Location is only available over a secure (https) connection. Pick a city or enter coordinates.',
+  unsupported: 'This browser can’t share your location. Search for a city instead.',
+  insecure: 'Location is only available over a secure (https) connection. Search for a city instead.',
   denied: 'Location access is turned off for this site. You can allow it in your browser settings, or pick a city.',
   unavailable: 'Your position couldn’t be found right now. Try again, or pick a city.',
   timeout: 'Finding your position took too long. Try again, or pick a city.',

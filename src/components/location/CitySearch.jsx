@@ -35,7 +35,7 @@ export function CitySearch({ onSelect, autoFocus = false }) {
         loading={loading && options.length === 0}
         loadingText="Searching cities worldwide…"
         noOptionsText={
-          tooShort ? 'Type at least 2 letters' : 'No matching place. You can enter coordinates instead.'
+          tooShort ? 'Type at least 2 letters' : 'No matching place. Try another spelling or a nearby town.'
         }
         autoHighlight
         blurOnSelect
