@@ -53,6 +53,22 @@ export function locationFromCity(city) {
 }
 
 /**
+ * From a worldwide search result (see geocoding.js). The result already carries its IANA zone.
+ * @returns {SolsticeLocation}
+ */
+export function locationFromPlace(place) {
+  return {
+    id: `place:${place.id}`,
+    name: place.name,
+    detail: [place.region, place.country].filter(Boolean).join(', ') || formatCoordinates(place.lat, place.lng),
+    lat: round(place.lat),
+    lng: round(place.lng),
+    timeZone: place.timeZone,
+    source: 'city',
+  };
+}
+
+/**
  * From the device's position. The device's own time zone is used, since that is
  * the clock the person holding it lives by.
  * @returns {SolsticeLocation}

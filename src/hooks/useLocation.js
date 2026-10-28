@@ -1,7 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { CITIES } from '../data/cities.js';
 import { getCurrentPosition } from '../lib/location/geolocation.js';
-import { locationFromCity, locationFromCoordinates, locationFromGeolocation } from '../lib/location/locations.js';
+import {
+  isValidLocation,
+  locationFromCity,
+  locationFromCoordinates,
+  locationFromGeolocation,
+} from '../lib/location/locations.js';
 import { loadLocation, saveLocation } from '../lib/location/storage.js';
 
 /**
@@ -22,6 +27,9 @@ export function useLocation() {
   }, []);
 
   const chooseCity = useCallback((city) => commit(locationFromCity(city)), [commit]);
+
+  /** A location already built by the search (built-in or worldwide). */
+  const chooseLocation = useCallback((next) => (isValidLocation(next) ? commit(next) : null), [commit]);
 
   const chooseCoordinates = useCallback(
     (lat, lng) => commit(locationFromCoordinates(lat, lng, CITIES)),
@@ -47,5 +55,5 @@ export function useLocation() {
 
   const clearGeoStatus = useCallback(() => setGeoStatus({ state: 'idle', message: null }), []);
 
-  return { location, chooseCity, chooseCoordinates, locate, geoStatus, clearGeoStatus };
+  return { location, chooseCity, chooseLocation, chooseCoordinates, locate, geoStatus, clearGeoStatus };
 }

@@ -26,7 +26,7 @@ export function LocationPicker({
   onClose,
   location,
   geoStatus,
-  onChooseCity,
+  onChooseLocation,
   onChooseCoordinates,
   onLocate,
   onExited,
@@ -60,13 +60,14 @@ export function LocationPicker({
 
       <DialogContent>
         <Typography id="location-picker-description" variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Sun times are calculated on this device. Your location is saved here and never sent anywhere.
+          Sun times are calculated on this device and your location is saved only here. Searching sends just the
+          text you type to Open-Meteo; built-in cities work offline.
         </Typography>
 
         <CitySearch
           autoFocus
-          onSelect={(city) => {
-            onChooseCity(city);
+          onSelect={(place) => {
+            onChooseLocation(place);
             onClose();
           }}
         />

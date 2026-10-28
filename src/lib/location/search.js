@@ -1,3 +1,5 @@
+import { distanceKm } from './coordinates.js';
+
 /** Accent- and case-insensitive city search, ranked so prefix matches come first. */
 
 export const normalizeSearchText = (text) =>
@@ -31,4 +33,23 @@ export function searchCities(cities, query, limit = 50) {
     .sort((a, b) => a.rank - b.rank || a.city.name.localeCompare(b.city.name))
     .slice(0, limit)
     .map((r) => r.city);
+}
+
+/** Within this distance, two results with the same name are treated as the same place. */
+const SAME_PLACE_KM = 25;
+
+/**
+ * Built-in results first (instant, offline), then worldwide results that aren't duplicates.
+ * Both lists hold locations with `name`, `lat` and `lng`.
+ */
+export function mergePlaceResults(local, online, limit = 40) {
+  const merged = [...local];
+  for (const place of online) {
+    const name = normalizeSearchText(place.name);
+    const duplicate = merged.some(
+      (existing) => normalizeSearchText(existing.name) === name && distanceKm(existing, place) < SAME_PLACE_KM,
+    );
+    if (!duplicate) merged.push(place);
+  }
+  return merged.slice(0, limit);
 }
